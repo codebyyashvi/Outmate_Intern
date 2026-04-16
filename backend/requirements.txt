@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pydantic
+pydantic-core
+requests
+python-dotenv
+slowapi
+python-dotenv
