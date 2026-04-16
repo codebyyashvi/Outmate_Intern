@@ -15,18 +15,18 @@ function JSONModal({ isOpen, data, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-96 overflow-auto p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold">Raw JSON Data</h3>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+          <h3 className="text-lg font-bold text-gray-800">Raw JSON Data</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-gray-400 hover:text-gray-600 text-3xl font-light transition"
           >
-            ×
+            ✕
           </button>
         </div>
-        <pre className="bg-gray-100 p-4 rounded overflow-auto text-sm">
+        <pre className="flex-1 overflow-auto p-6 bg-gray-900 text-gray-100 text-xs font-mono rounded">
           {JSON.stringify(data, null, 2)}
         </pre>
       </div>
@@ -34,59 +34,127 @@ function JSONModal({ isOpen, data, onClose }) {
   );
 }
 
-function ResultsTable({ results, onViewJSON }) {
+function ResultCard({ row, onViewJSON }) {
+  const isCompany = row.type === "company";
+
   return (
-    <div className="overflow-x-auto mt-6">
-      <table className="w-full border-collapse border border-gray-300">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border p-2 text-left">Name</th>
-            <th className="border p-2 text-left">Type</th>
-            <th className="border p-2 text-left">Industry / Title</th>
-            <th className="border p-2 text-left">Location</th>
-            <th className="border p-2 text-left">Revenue / Company</th>
-            <th className="border p-2 text-left">Employees</th>
-            <th className="border p-2 text-left">Founded</th>
-            <th className="border p-2 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.map((row, i) => (
-            <tr key={i} className="hover:bg-gray-50">
-              <td className="border p-2">
-                <a
-                  href={row.linkedin_url || row.domain || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline font-semibold"
-                >
-                  {row.name}
-                </a>
-              </td>
-              <td className="border p-2 text-xs">
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  {row.type}
-                </span>
-              </td>
-              <td className="border p-2 text-sm">
-                {row.industry || row.job_title || "—"}
-              </td>
-              <td className="border p-2 text-sm">{row.country || "—"}</td>
-              <td className="border p-2 text-sm">{row.revenue || row.company_name || "—"}</td>
-              <td className="border p-2 text-sm">{row.employee_count || "—"}</td>
-              <td className="border p-2 text-sm">{row.founded_year || "—"}</td>
-              <td className="border p-2 text-center">
-                <button
-                  onClick={() => onViewJSON(row)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-                >
-                  JSON
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-100">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <a
+            href={row.linkedin_url || (row.domain ? `https://${row.domain}` : "#")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-700 font-bold text-lg block mb-1 truncate"
+          >
+            {row.name}
+          </a>
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+            isCompany 
+              ? "bg-blue-100 text-blue-700" 
+              : "bg-purple-100 text-purple-700"
+          }`}>
+            {isCompany ? "Company" : "Prospect"}
+          </span>
+        </div>
+      </div>
+
+      {/* Grid Info */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+        {row.industry && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Industry</p>
+            <p className="text-sm font-semibold text-gray-800">{row.industry}</p>
+          </div>
+        )}
+        {row.country && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Location</p>
+            <p className="text-sm font-semibold text-gray-800">{row.country}</p>
+          </div>
+        )}
+        {row.employee_count && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Employees</p>
+            <p className="text-sm font-semibold text-gray-800">{row.employee_count.toLocaleString()}</p>
+          </div>
+        )}
+        {row.revenue && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Revenue</p>
+            <p className="text-sm font-semibold text-gray-800">{row.revenue}</p>
+          </div>
+        )}
+        {row.founded_year && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Founded</p>
+            <p className="text-sm font-semibold text-gray-800">{row.founded_year}</p>
+          </div>
+        )}
+        {row.job_title && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">Title</p>
+            <p className="text-sm font-semibold text-gray-800">{row.job_title}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Tech Stack */}
+      {row.tech_stack && row.tech_stack.length > 0 && (
+        <div className="mb-4 pb-4 border-t border-gray-200">
+          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Tech Stack</p>
+          <div className="flex flex-wrap gap-2">
+            {row.tech_stack.slice(0, 5).map((tech, i) => (
+              <span key={i} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">
+                {tech}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Links */}
+      <div className="flex gap-2 pt-4 border-t border-gray-200">
+        {row.domain && (
+          <a
+            href={`https://${row.domain}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-center text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 py-2 rounded-lg transition"
+          >
+            🌐 Website
+          </a>
+        )}
+        {row.linkedin_url && (
+          <a
+            href={row.linkedin_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-center text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 py-2 rounded-lg transition"
+          >
+            💼 LinkedIn
+          </a>
+        )}
+        <button
+          onClick={() => onViewJSON(row)}
+          className="flex-1 text-center text-xs font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 py-2 rounded-lg transition"
+        >
+          { } JSON
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <div className="relative w-12 h-12 mb-4">
+        <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 border-r-blue-600 animate-spin"></div>
+      </div>
+      <p className="text-gray-600 font-medium">Processing your request...</p>
     </div>
   );
 }
@@ -143,108 +211,154 @@ function App() {
     setShowJSONModal(true);
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">
-              OutMate – NLP Enrichment Demo
-          </h1>
-          <p className="text-gray-600">
-            Convert natural language into structured B2B data enrichment
-          </p>
-        </header>
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      handleSearch();
+    }
+  };
 
-        {/* Main Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          {/* Error Banner */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-              <p className="text-red-700">{error}</p>
-              <button
-                onClick={() => setError("")}
-                className="ml-auto text-red-500 hover:text-red-700"
-              >
-                ×
-              </button>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      {/* Animated background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/2 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          {/* Header */}
+          <header className="mb-12">
+            <div className="text-center mb-8">
+              <h1 className="text-5xl sm:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-200 to-purple-300 mb-4">
+                OutMate
+              </h1>
+              <p className="text-xl text-blue-100 mb-2">NLP Database Enrichment</p>
+              <p className="text-blue-300 max-w-2xl mx-auto">
+                Convert natural language into structured B2B insights. Just describe what you're looking for.
+              </p>
+            </div>
+          </header>
+
+          {/* Main Card */}
+          <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 mb-8">
+            {/* Error Banner */}
+            {error && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 rounded-lg flex items-start gap-3 animate-pulse">
+                <span className="text-2xl">⚠️</span>
+                <div className="flex-1">
+                  <p className="text-red-800 font-medium">Error</p>
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+                <button
+                  onClick={() => setError("")}
+                  className="text-red-400 hover:text-red-600 text-2xl font-light"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Input Section */}
+            <div className="mb-8">
+              <label className="block text-sm font-semibold text-gray-800 mb-3">
+                What are you looking for?
+              </label>
+              <textarea
+                className="w-full border-2 border-gray-200 rounded-xl p-4 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 resize-none text-gray-800 placeholder-gray-400 font-medium"
+                rows="4"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Example: Find SaaS companies in the US with 50-500 employees raising Series B..."
+              />
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
+                    loading
+                      ? "bg-gray-400 cursor-not-allowed text-gray-600"
+                      : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                  }`}
+                >
+                  {loading ? "⏳ Processing..." : "🔍 Search & Enrich"}
+                </button>
+                <button
+                  onClick={handleClear}
+                  className="px-6 py-3 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-gray-800 transition-all duration-300"
+                >
+                  Clear
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-3 flex items-center gap-2">
+                <span>ℹ️</span>
+                <span><strong>Max 3 results</strong> per query • <strong>Ctrl+Enter</strong> to search</span>
+              </p>
+            </div>
+
+            {/* Sample Prompts */}
+            <div className="border-t border-gray-200 pt-8">
+              <h3 className="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Explore Examples</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {SAMPLE_PROMPTS.map((sample, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSamplePrompt(sample)}
+                    className="text-left text-sm p-4 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border border-blue-100 hover:border-blue-300 rounded-lg transition-all duration-300 transform hover:scale-[1.02]"
+                    title={sample}
+                  >
+                    <p className="text-gray-700 font-medium line-clamp-2">{sample}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-2xl p-12">
+              <LoadingSpinner />
             </div>
           )}
 
-          {/* Input Section */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Enter Your Search Prompt
-            </label>
-            <textarea
-              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              rows="4"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Example: Find SaaS companies in the US with 50-500 employees..."
-            />
-            <div className="flex gap-2 mt-3">
-              <button
-                onClick={handleSearch}
-                disabled={loading}
-                className={`flex-1 px-6 py-2 rounded-lg font-semibold transition ${
-                  loading
-                    ? "bg-gray-400 cursor-not-allowed text-gray-600"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                }`}
-              >
-                {loading ? "🔄 Processing..." : "🔍 Search & Enrich"}
-              </button>
-              <button
-                onClick={handleClear}
-                className="px-6 py-2 rounded-lg font-semibold bg-gray-200 hover:bg-gray-300 text-gray-800"
-              >
-                Clear
-              </button>
+          {/* Results Section */}
+          {!loading && results.length > 0 && (
+            <div className="animate-fade-in">
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  ✨ Results
+                </h2>
+                <p className="text-blue-200">
+                  Found <span className="font-bold text-blue-100">{results.length}</span> enriched record{results.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {results.map((row, i) => (
+                  <ResultCard
+                    key={i}
+                    row={row}
+                    onViewJSON={handleViewJSON}
+                  />
+                ))}
+              </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              ⓘ <strong>Max 3 results</strong> per query to optimize API usage
-            </p>
-          </div>
+          )}
 
-          {/* Sample Prompts */}
-          <div className="mb-6 border-t pt-6">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">
-              Try Sample Prompts
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {SAMPLE_PROMPTS.map((sample, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSamplePrompt(sample)}
-                  className="text-left text-sm p-3 bg-slate-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition truncate"
-                  title={sample}
-                >
-                  {sample.substring(0, 50)}...
-                </button>
-              ))}
+          {/* Empty State */}
+          {!loading && results.length === 0 && !error && (
+            <div className="text-center py-16 bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl border border-white border-opacity-20">
+              <div className="text-5xl mb-4">📊</div>
+              <p className="text-xl text-blue-100 font-medium">
+                Enter a prompt to discover B2B insights
+              </p>
+              <p className="text-blue-300 mt-2">
+                Powered by Gemini AI & Explorium Data
+              </p>
             </div>
-          </div>
+          )}
         </div>
-
-        {/* Results Section */}
-        {results.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">
-              ✓ Results ({results.length} records)
-            </h2>
-            <ResultsTable results={results} onViewJSON={handleViewJSON} />
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && results.length === 0 && !error && (
-          <div className="text-center py-12 bg-white rounded-lg shadow-lg">
-            <p className="text-gray-500 text-lg">
-              Enter a prompt and click "Search & Enrich" to get started
-            </p>
-          </div>
-        )}
       </div>
 
       {/* JSON Modal */}

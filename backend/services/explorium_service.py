@@ -12,28 +12,33 @@ logger = logging.getLogger(__name__)
 
 def fetch_data(entity_type, filters):
     """Fetch data from Explorium API with error handling and logging."""
-    if not API_KEY and not USE_MOCK:
-        raise ValueError("EXPLORIUM_API_KEY environment variable not set")
-    
+    logger.info(f"📊 fetch_data called - USE_MOCK_DATA={USE_MOCK}, API_KEY={'set' if API_KEY else 'not set'}")
     logger.info(f"Entity: {entity_type}")
     logger.info(f"Filters: {filters}")
     
-    # Use mock data for testing if enabled
+    if not API_KEY and not USE_MOCK:
+        raise ValueError("EXPLORIUM_API_KEY environment variable not set")
+    
+    # **USE MOCK DATA FIRST if enabled**
     if USE_MOCK:
-        logger.info("Using mock data for testing")
+        logger.info("✅ USE_MOCK_DATA=true. Using mock B2B data for testing...")
         return get_mock_data(entity_type, filters)
     
-    url = "https://api.explorium.ai/v1/search"
+    # Only call real API if mock is disabled
+    logger.info("🌐 USE_MOCK_DATA=false. Calling real Explorium API...")
+    
+    url = "https://api.explorium.ai/v1/prospects"
 
     payload = {
-        "entity": entity_type,
-        "filters": filters,
-        "limit": 3
+        "mode": "full",
+        "page": 1,
+        "page_size": 3
     }
 
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
+        "accept": "application/json",
+        "content-type": "application/json",
+        "api_key": API_KEY
     }
 
     logger.info(f"Calling Explorium API: {url}")
@@ -48,20 +53,35 @@ def fetch_data(entity_type, filters):
     # Check for HTTP errors
     if res.status_code != 200:
         error_msg = res.text
-        logger.error(f"Explorium API error ({res.status_code}): {error_msg}")
+        logger.error(f"❌ Explorium API error ({res.status_code}): {error_msg}")
         raise ValueError(f"Explorium API error ({res.status_code}): {error_msg}")
     
     data = res.json()
     
+    logger.info(f"📥 Explorium response: {data}")
+    
     # Check for API error response
     if 'error' in data:
         error_msg = data.get('error')
-        logger.error(f"Explorium API error: {error_msg}")
+        logger.error(f"❌ Explorium API error: {error_msg}")
         raise ValueError(f"Explorium API error: {error_msg}")
     
-    logger.info(f"Explorium returned {len(data.get('results', []))} results")
+    # Handle different response structures from Explorium
+    results = data.get('results', [])
+    if not results and 'data' in data:
+        results = data.get('data', [])
+    if not results and 'prospects' in data:
+        results = data.get('prospects', [])
     
-    return data
+    # Reformat to our standard structure for normalization
+    standardized = {"results": results}
+    logger.info(f"✅ Explorium returned {len(results)} results")
+    
+    # Normalize results to our standard format
+    normalized = normalize(standardized)
+    logger.info(f"📤 Normalized response: {normalized}")
+    
+    return normalized
 
 def get_mock_data(entity_type, filters):
     """Return mock B2B data for testing purposes."""
@@ -139,15 +159,31 @@ def normalize(data):
     results = []
 
     for item in data.get("results", [])[:3]:
+        # Handle both company and prospect response structures
+        name = item.get("name") or item.get("full_name")
+        domain = item.get("domain") or item.get("company_website")
+        company = item.get("company_name")
+        linkedin_url = item.get("linkedin_url") or item.get("linkedin")
+        if not linkedin_url and item.get("linkedin_url_array"):
+            linkedin_url = item.get("linkedin_url_array")[0]
+        
+        # Add https:// if missing from LinkedIn URL
+        if linkedin_url and not linkedin_url.startswith("http"):
+            linkedin_url = "https://" + linkedin_url
+        
         results.append({
-            "type": item.get("type"),
-            "name": item.get("name"),
-            "domain": item.get("domain"),
+            "type": item.get("type", "prospect"),
+            "name": name,
+            "company": company,
+            "domain": domain,
             "industry": item.get("industry"),
             "employee_count": item.get("employees"),
             "revenue": item.get("revenue"),
-            "country": item.get("country"),
-            "linkedin_url": item.get("linkedin"),
+            "country": item.get("country") or item.get("country_name"),
+            "job_title": item.get("job_title"),
+            "seniority": item.get("job_level_main"),
+            "linkedin_url": linkedin_url,
+            "website": domain,
             "raw": item
         })
 
